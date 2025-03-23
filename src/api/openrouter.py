@@ -78,7 +78,7 @@ class OpenRouterClient:
             models_data = response.json()
             
             # Логирование успешного получения списка моделей
-            self.logger.info(f"Retrieved {len(models_data["data"])} models")
+            self.logger.info(f'Retrieved {len(models_data["data"])} models')
             
             # Преобразование данных в нужный формат
             return [
