@@ -12,6 +12,7 @@ import time                                        # Библиотека для
 import json                                        # Библиотека для работы с JSON-данными
 from datetime import datetime                      # Класс для работы с датой и временем
 import os                                          # Библиотека для работы с операционной системой
+from utils.notifications import send_low_balance_notification  # Функция для отправки уведомления о низком балансе
 
 class ChatApp:
     """
@@ -39,6 +40,7 @@ class ChatApp:
             "Баланс: Загрузка...",                # Начальный текст до загрузки реального баланса
             **AppStyles.BALANCE_TEXT               # Применение стилей из конфигурации
         )
+        self.balance = None
         self.update_balance()                      # Первичное обновление баланса
 
         # Создание директории для экспорта истории чата
@@ -78,6 +80,7 @@ class ChatApp:
         """
         try:
             balance = self.api_client.get_balance()         # Запрос баланса через API
+            self.balance = balance
             self.balance_text.value = f"Баланс: {balance}"  # Обновление текста с балансом
             self.balance_text.color = ft.Colors.GREEN_400   # Установка зеленого цвета для успешного получения
         except Exception as e:
@@ -85,8 +88,26 @@ class ChatApp:
             self.balance_text.value = "Баланс: н/д"         # Установка текста ошибки
             self.balance_text.color = ft.Colors.RED_400     # Установка красного цвета для ошибки
             self.logger.error(f"Ошибка обновления баланса: {e}")
-            
-    def main(self, page: ft.Page):
+
+        async def check_balances_and_notify(self, page: ft.Page):
+            """
+            Проверяет баланс и отправляет уведомление, если он ниже порога.
+            """
+            balance = self.balance
+            # Логирование баланса
+            self.logger.info(f"Баланс:{balance}")
+            if float(balance.replace('$','')) < self.low_balance_threshold:
+                await send_low_balance_notification()
+                # Показываем уведомление в приложении
+                page.show_snack_bar(
+                    ft.SnackBar(
+                        content=ft.Text(f"Внимание: Низкий баланс ({balance})", color=ft.colors.RED_500),
+                        bgcolor=ft.colors.YELLOW_100,
+                        duration=5000,
+                    )
+                )
+
+    async def main(self, page: ft.Page):
         """
         Основная функция инициализации интерфейса приложения.
         Создает все элементы UI и настраивает их взаимодействие.
@@ -94,6 +115,8 @@ class ChatApp:
         Args:
             page (ft.Page): Объект страницы Flet для размещения элементов интерфейса
         """
+        asyncio.create_task(self.check_balances_and_notify(page))
+        
         # Применение базовых настроек страницы из конфигурации стилей
         for key, value in AppStyles.PAGE_SETTINGS.items():
             setattr(page, key, value)
