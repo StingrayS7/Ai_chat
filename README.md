@@ -14,9 +14,9 @@
 2. **Клонирование проекта**
    ```bash
    # Клонируйте репозиторий
-   git clone https://github.com/neuro-fill/51-lesson.git
+   git clone https://github.com/StingrayS7/Ai_chat.git
    # Перейдите в директорию проекта
-   cd 51-lesson
+   cd Ai_chat
    ```
 
 3. **Настройка VSCode**
